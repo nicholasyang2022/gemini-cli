@@ -17,6 +17,8 @@ import {
   SimpleExtensionLoader,
   type ToolCallRequestInfo,
   type Config,
+  checkPathTrust,
+  isHeadlessMode,
   resolveToRealPath,
 } from '@google/gemini-cli-core';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,7 +37,6 @@ import {
 import {
   loadConfig,
   setTargetDir,
-  setIsTrusted,
   envStorage,
   cwdSymbol,
   loadEnvironment,
@@ -133,16 +134,23 @@ export class CoderAgentExecutor implements AgentExecutor {
     fn: (isTrusted: boolean, workspaceRoot: string) => Promise<T>,
   ): Promise<T> {
     const workspaceRoot = await setTargetDir(agentSettings);
-    const isTrusted = setIsTrusted(agentSettings, workspaceRoot);
+    const initialSettings = loadSettings(workspaceRoot, false);
+    const { isTrusted } = checkPathTrust({
+      path: workspaceRoot,
+      isFolderTrustEnabled: initialSettings.folderTrust ?? true,
+      isHeadless: isHeadlessMode(),
+    });
 
     const envVars: TaskEnv = { ...process.env };
-    envVars['GEMINI_CLI_TRUST_WORKSPACE'] = isTrusted ? 'true' : 'false';
     envVars[cwdSymbol] = workspaceRoot;
 
     return envStorage.run(envVars, async () => {
-      const loadedEnv = await loadEnvironment(isTrusted, workspaceRoot);
+      const loadedEnv = await loadEnvironment(
+        isTrusted ?? false,
+        workspaceRoot,
+      );
       Object.assign(envVars, loadedEnv);
-      return fn(isTrusted, workspaceRoot);
+      return fn(isTrusted ?? false, workspaceRoot);
     });
   }
 

@@ -41,7 +41,6 @@ import {
   getAdminBlockedMcpServersMessage,
   getProjectRootForWorktree,
   isGeminiWorktree,
-  getSafeGitEnv,
   type WorktreeSettings,
   type HookDefinition,
   type HookEventName,
@@ -1143,7 +1142,6 @@ async function resolveWorktreeSettings(
   try {
     const { stdout } = await execa('git', ['rev-parse', '--show-toplevel'], {
       cwd,
-      env: getSafeGitEnv(),
     });
     const toplevel = stdout.trim();
     const projectRoot = await getProjectRootForWorktree(toplevel);
@@ -1163,7 +1161,6 @@ async function resolveWorktreeSettings(
   try {
     const { stdout } = await execa('git', ['rev-parse', 'HEAD'], {
       cwd: worktreePath,
-      env: getSafeGitEnv(),
     });
     worktreeBaseSha = stdout.trim();
   } catch (e: unknown) {

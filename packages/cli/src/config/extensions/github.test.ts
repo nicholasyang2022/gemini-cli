@@ -75,7 +75,6 @@ describe('github.ts', () => {
       checkout: ReturnType<typeof vi.fn>;
       listRemote: ReturnType<typeof vi.fn>;
       revparse: ReturnType<typeof vi.fn>;
-      env: ReturnType<typeof vi.fn>;
     };
 
     beforeEach(() => {
@@ -86,7 +85,6 @@ describe('github.ts', () => {
         checkout: vi.fn(),
         listRemote: vi.fn(),
         revparse: vi.fn(),
-        env: vi.fn().mockReturnThis(),
       };
       vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit);
     });
@@ -208,7 +206,6 @@ describe('github.ts', () => {
       getRemotes: ReturnType<typeof vi.fn>;
       listRemote: ReturnType<typeof vi.fn>;
       revparse: ReturnType<typeof vi.fn>;
-      env: ReturnType<typeof vi.fn>;
     };
 
     beforeEach(() => {
@@ -219,7 +216,6 @@ describe('github.ts', () => {
         getRemotes: vi.fn(),
         listRemote: vi.fn(),
         revparse: vi.fn(),
-        env: vi.fn().mockReturnThis(),
       };
       vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit);
     });

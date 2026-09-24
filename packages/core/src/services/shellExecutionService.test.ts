@@ -14,7 +14,6 @@ import {
   type Mock,
 } from 'vitest';
 
-import os from 'node:os';
 import path from 'node:path';
 import EventEmitter from 'node:events';
 import type { Readable } from 'node:stream';
@@ -2645,37 +2644,16 @@ describe('ShellExecutionService environment variables', () => {
     expect(cpEnv).toHaveProperty('DISPLAY', '');
     expect(cpEnv).toHaveProperty('DBUS_SESSION_BUS_ADDRESS', '');
 
-    // Global / system config neutralization paths
-    const devNullPath = os.platform() === 'win32' ? 'NUL' : '/dev/null';
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_GLOBAL', devNullPath);
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_SYSTEM', devNullPath);
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_NOSYSTEM', '1');
-
     // Existing values should be preserved
     expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_0', 'core.editor');
     expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_0', 'vim');
     expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_1', 'pull.rebase');
     expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_1', 'true');
 
-    // The 7 security overrides should be appended at index 2..8
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_COUNT', '9');
+    // The new credential.helper override should be appended at index 2
+    expect(cpEnv).toHaveProperty('GIT_CONFIG_COUNT', '3');
     expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_2', 'credential.helper');
     expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_2', '');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_3', 'core.fsmonitor');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_3', '');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_4', 'core.hooksPath');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_4', '');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_5', 'core.sshCommand');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_5', '');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_6', 'core.pager');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_6', 'cat');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_7', 'core.editor');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_7', '');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_KEY_8', 'sequence.editor');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_VALUE_8', '');
-    expect(cpEnv).not.toHaveProperty('GIT_CONFIG_KEY_9');
-    expect(cpEnv).not.toHaveProperty('GIT_CONFIG_VALUE_9');
-    expect(Object.values(cpEnv)).not.toContain('diff.external');
 
     // Ensure child_process exits
     mockChildProcess.emit('exit', 0, null);
@@ -2685,7 +2663,7 @@ describe('ShellExecutionService environment variables', () => {
     vi.unstubAllEnvs();
   });
 
-  it('should include headless git and gh environment variables in interactive fallback mode', async () => {
+  it('should NOT include headless git and gh environment variables in interactive fallback mode', async () => {
     vi.resetModules();
     vi.stubEnv('GIT_TERMINAL_PROMPT', undefined);
     vi.stubEnv('GIT_ASKPASS', undefined);
@@ -2710,12 +2688,12 @@ describe('ShellExecutionService environment variables', () => {
 
     expect(mockCpSpawn).toHaveBeenCalled();
     const cpEnv = mockCpSpawn.mock.calls[0][2].env;
-    expect(cpEnv).toHaveProperty('GIT_TERMINAL_PROMPT', '0');
-    expect(cpEnv).toHaveProperty('GIT_ASKPASS', '');
-    expect(cpEnv).toHaveProperty('SSH_ASKPASS', '');
-    expect(cpEnv).toHaveProperty('GH_PROMPT_DISABLED', '1');
-    expect(cpEnv).toHaveProperty('GCM_INTERACTIVE', 'never');
-    expect(cpEnv).toHaveProperty('GIT_CONFIG_COUNT');
+    expect(cpEnv).not.toHaveProperty('GIT_TERMINAL_PROMPT');
+    expect(cpEnv).not.toHaveProperty('GIT_ASKPASS');
+    expect(cpEnv).not.toHaveProperty('SSH_ASKPASS');
+    expect(cpEnv).not.toHaveProperty('GH_PROMPT_DISABLED');
+    expect(cpEnv).not.toHaveProperty('GCM_INTERACTIVE');
+    expect(cpEnv).not.toHaveProperty('GIT_CONFIG_COUNT');
 
     // Ensure child_process exits
     mockChildProcess.emit('exit', 0, null);

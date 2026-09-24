@@ -22,8 +22,10 @@ import { Storage } from '../config/storage.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
-import { homedir as pathsHomedir } from '../utils/paths.js';
+import { GEMINI_DIR, homedir as pathsHomedir } from '../utils/paths.js';
 import { spawnAsync } from '../utils/shell-utils.js';
+
+const PROJECT_SLUG = 'project-slug';
 
 vi.mock('../utils/shell-utils.js', () => ({
   spawnAsync: vi.fn(),
@@ -51,13 +53,9 @@ vi.mock('simple-git', () => ({
 }));
 
 const hoistedIsGitRepositoryMock = vi.hoisted(() => vi.fn());
-vi.mock('../utils/gitUtils.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../utils/gitUtils.js')>();
-  return {
-    ...actual,
-    isGitRepository: hoistedIsGitRepositoryMock,
-  };
-});
+vi.mock('../utils/gitUtils.js', () => ({
+  isGitRepository: hoistedIsGitRepositoryMock,
+}));
 
 const hoistedMockHomedir = vi.hoisted(() => vi.fn());
 vi.mock('node:os', async (importOriginal) => {
@@ -133,13 +131,11 @@ describe('GitService', () => {
       commit: 'initial',
     });
     storage = new Storage(projectRoot);
-    await storage.initialize();
   });
 
   afterEach(async () => {
-    if (testRootDir) {
-      await fs.rm(testRootDir, { recursive: true, force: true });
-    }
+    vi.restoreAllMocks();
+    await fs.rm(testRootDir, { recursive: true, force: true });
   });
 
   describe('constructor', () => {
@@ -151,9 +147,7 @@ describe('GitService', () => {
   describe('verifyGitAvailability', () => {
     it('should resolve true if git --version command succeeds', async () => {
       await expect(GitService.verifyGitAvailability()).resolves.toBe(true);
-      expect(spawnAsync).toHaveBeenCalledWith('git', ['--version'], {
-        env: expect.anything(),
-      });
+      expect(spawnAsync).toHaveBeenCalledWith('git', ['--version']);
     });
 
     it('should resolve false if git --version command fails', async () => {
@@ -187,7 +181,7 @@ describe('GitService', () => {
     let gitConfigPath: string;
 
     beforeEach(async () => {
-      repoDir = storage.getHistoryDir();
+      repoDir = path.join(homedir, GEMINI_DIR, 'history', PROJECT_SLUG);
       gitConfigPath = path.join(repoDir, '.gitconfig');
     });
 
